@@ -122,7 +122,7 @@ public class TImageFiles {
      */
     public static boolean checkMimeType(Context context, String minType) {
         boolean isPicture =
-            TextUtils.isEmpty(minType) ? false : ".jpg|.gif|.png|.bmp|.jpeg|.webp|".contains(minType.toLowerCase()) ? true : false;
+            TextUtils.isEmpty(minType) ? false : ".jpg|.gif|.png|.bmp|.jpeg|.webp|.heic|".contains(minType.toLowerCase()) ? true : false;
         if (!isPicture) {
             Toast.makeText(context, context.getResources().getText(org.devio.takephoto.R.string.tip_type_not_image), Toast.LENGTH_SHORT).show();
         }
