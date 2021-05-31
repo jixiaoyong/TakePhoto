@@ -1,15 +1,21 @@
 package org.devio.takephoto.uitl;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
 
 import com.darsh.multipleimageselect.activities.AlbumSelectActivity;
 import com.darsh.multipleimageselect.helpers.Constants;
+
 import org.devio.takephoto.model.CropOptions;
 import org.devio.takephoto.model.TContextWrap;
+
+import java.util.List;
 
 /**
  * Intent工具类用于生成拍照、
@@ -39,11 +45,12 @@ public class IntentUtils {
      * @param options   裁剪配置
      * @return
      */
-    public static Intent getCropIntentWithOtherApp(Uri targetUri, Uri outPutUri, CropOptions options) {
+    public static Intent getCropIntentWithOtherApp(TContextWrap contextWrap, Uri targetUri, Uri outPutUri, CropOptions options) {
         boolean isReturnData = TUtils.isReturnData();
         Log.w(TAG, "getCaptureIntentWithCrop:isReturnData:" + (isReturnData ? "true" : "false"));
         Intent intent = new Intent("com.android.camera.action.CROP");
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         intent.setDataAndType(targetUri, "image/*");
         intent.putExtra("crop", "true");
         if (options.getAspectX() * options.getAspectY() > 0) {
@@ -54,11 +61,20 @@ public class IntentUtils {
             intent.putExtra("outputX", options.getOutputX());
             intent.putExtra("outputY", options.getOutputY());
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            List<ResolveInfo> resInfoList = contextWrap.getActivity().getPackageManager()
+                    .queryIntentActivities(intent, PackageManager.MATCH_ALL);
+            for (ResolveInfo resolveInfo : resInfoList) {
+                String packageName = resolveInfo.activityInfo.packageName;
+                contextWrap.getActivity().grantUriPermission(packageName, outPutUri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+        }
         intent.putExtra("scale", true);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, outPutUri);
         intent.putExtra("return-data", isReturnData);
         intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
-        intent.putExtra("noFaceDetection", true); // no face detection
+        intent.putExtra("noFaceDetection", true);
         return intent;
     }
 

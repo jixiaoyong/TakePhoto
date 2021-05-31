@@ -1,6 +1,7 @@
 package org.devio.simple;
 
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.view.View;
 import android.widget.EditText;
@@ -11,6 +12,7 @@ import org.devio.takephoto.compress.CompressConfig;
 import org.devio.takephoto.model.CropOptions;
 import org.devio.takephoto.model.LubanOptions;
 import org.devio.takephoto.model.TakePhotoOptions;
+import org.devio.takephoto.uitl.TUriParse;
 
 import java.io.File;
 
@@ -38,7 +40,7 @@ import java.io.File;
 public class CustomHelper {
     private View rootView;
     private RadioGroup rgCrop, rgCompress, rgFrom, rgCropSize, rgCropTool, rgShowProgressBar, rgPickTool, rgCompressTool, rgCorrectTool,
-        rgRawFile;
+            rgRawFile;
     private EditText etCropHeight, etCropWidth, etLimit, etSize, etHeightPx, etWidthPx;
 
     public static CustomHelper of(View rootView) {
@@ -69,15 +71,20 @@ public class CustomHelper {
         etWidthPx = (EditText) rootView.findViewById(R.id.etWidthPx);
 
 
-
     }
 
     public void onClick(View view, TakePhoto takePhoto) {
-        File file = new File(Environment.getExternalStorageDirectory(), "/temp/" + System.currentTimeMillis() + ".jpg");
+        File file = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 11 开始必须使用分区存储
+            file = new File(view.getContext().getExternalFilesDir(null), "/temp/" + System.currentTimeMillis() + ".jpg");
+        } else {
+            file = new File(Environment.getExternalStorageDirectory(), "/temp/" + System.currentTimeMillis() + ".jpg");
+        }
         if (!file.getParentFile().exists()) {
             file.getParentFile().mkdirs();
         }
-        Uri imageUri = Uri.fromFile(file);
+        Uri imageUri = TUriParse.getUriForFile(view.getContext(), file);
 
         configCompress(takePhoto);
         configTakePhotoOption(takePhoto);
@@ -144,9 +151,9 @@ public class CustomHelper {
         CompressConfig config;
         if (rgCompressTool.getCheckedRadioButtonId() == R.id.rbCompressWithOwn) {
             config = new CompressConfig.Builder().setMaxSize(maxSize)
-                .setMaxPixel(width >= height ? width : height)
-                .enableReserveRaw(enableRawFile)
-                .create();
+                    .setMaxPixel(width >= height ? width : height)
+                    .enableReserveRaw(enableRawFile)
+                    .create();
         } else {
             LubanOptions option = new LubanOptions.Builder().setMaxHeight(height).setMaxWidth(width).setMaxSize(maxSize).create();
             config = CompressConfig.ofLuban(option);

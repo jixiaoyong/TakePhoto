@@ -1,8 +1,9 @@
 ## [TakePhoto](https://github.com/crazycodeboy/TakePhoto) 简介
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg)](https://github.com/crazycodeboy/TakePhoto/pulls)
-[![Download](https://api.bintray.com/packages/crazycodeboy/maven/TakePhoto/images/download.svg) ](https://bintray.com/crazycodeboy/maven/TakePhoto/_latestVersion)
-[![GitHub release](https://img.shields.io/github/release/crazycodeboy/TakePhoto.svg?maxAge=2592000?style=flat-square)](https://github.com/crazycodeboy/TakePhoto/releases)
+
+[![](https://jitpack.io/v/jixiaoyong/TakePhoto.svg)](https://jitpack.io/#jixiaoyong/TakePhoto)
+
 [![License Apache2.0](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://raw.githubusercontent.com/crazycodeboy/TakePhoto/master/LICENSE)
 
 
@@ -59,7 +60,7 @@ GitHub地址： [https://github.com/crazycodeboy/TakePhoto](https://github.com/c
   <version>4.1.0</version>
   <type>pom</type>
 </dependency>
-```  
+```
 
 
 ## 演示 
@@ -81,7 +82,7 @@ GitHub地址： [https://github.com/crazycodeboy/TakePhoto](https://github.com/c
  void takeSuccess(TResult result);
  void takeFail(TResult result,String msg);
  void takeCancel();
-```  
+```
 此方式使用简单，满足的大部分的使用需求，具体使用详见[simple](https://github.com/crazycodeboy/TakePhoto/blob/master/simple/src/main/java/com/jph/simple/SimpleActivity.java)。如果通过继承的方式无法满足实际项目的使用，可以通过下面介绍的方式。  
 
 **方式二：通过组装的方式**  
@@ -102,7 +103,7 @@ GitHub地址： [https://github.com/crazycodeboy/TakePhoto](https://github.com/c
         TPermissionType type=PermissionManager.onRequestPermissionsResult(requestCode,permissions,grantResults);
         PermissionManager.handlePermissionsResult(this,type,invokeParam,this);
     }
-```    
+```
 
 4.重写`TPermissionType invoke(InvokeParam invokeParam)`方法，添加如下代码：  
 
@@ -294,7 +295,7 @@ void onPickFromDocumentsWithCrop(Uri outPutUri, CropOptions options);
  * @param options  裁剪配置
  * */
 void onPickMultipleWithCrop(int limit, CropOptions options);
-```   
+```
 #### 对指定图片进行裁剪     
 另外，TakePhoto也支持你对指定图片进行裁剪：     
 
@@ -353,7 +354,7 @@ void onCrop(MultipleCrop multipleCrop, CropOptions options)throws TException;
 TakePhoto takePhoto=getTakePhoto();
 takePhoto.onEnableCompress(compressConfig,true);
 takePhoto.onPickFromGallery();
-```  
+```
 如果你启用了图片压缩，`TakePhoto`会使用`CompressImage`对图片进行压缩处理，`CompressImage`目前支持对图片的尺寸以及图片的质量进行压缩。默认情况下，`CompressImage`开启了尺寸与质量双重压缩。  
 
 #### 对指定图片进行压缩  

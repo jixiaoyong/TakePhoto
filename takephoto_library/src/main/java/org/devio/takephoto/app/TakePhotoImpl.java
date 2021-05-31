@@ -40,7 +40,6 @@ import org.devio.takephoto.uitl.TUriParse;
 import org.devio.takephoto.uitl.TUtils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -130,9 +129,10 @@ public class TakePhotoImpl implements TakePhoto {
                 break;
             case TConstant.RC_PICK_PICTURE_FROM_GALLERY_ORIGINAL://从相册选择照片不裁剪
                 if (resultCode == Activity.RESULT_OK) {
+                    Uri copyImgFormOtherApp = TUtils.copyImgFormOtherApp(data.getData(),contextWrap.getActivity());
                     try {
                         takeResult(
-                                TResult.of(TImage.of(TUriParse.getFilePathWithUri(data.getData(), contextWrap.getActivity()), fromType)));
+                                TResult.of(TImage.of(TUriParse.getFilePathWithUri(copyImgFormOtherApp, contextWrap.getActivity()), fromType)));
                     } catch (TException e) {
                         takeResult(TResult.of(TImage.of(data.getData(), fromType)), e.getDetailMessage());
                         e.printStackTrace();
@@ -172,7 +172,9 @@ public class TakePhotoImpl implements TakePhoto {
                         ImageRotateUtil.of().correctImage(contextWrap.getActivity(), tempUri);
                     }
                     try {
-                        onCrop(tempUri, Uri.fromFile(new File(TUriParse.parseOwnUri(contextWrap.getActivity(), outPutUri))), cropOptions);
+                        onCrop(tempUri, TUriParse.getUriForFile(contextWrap.getActivity(),
+                                new File(TUriParse.parseOwnUri(contextWrap.getActivity(), outPutUri))),
+                                cropOptions);
                     } catch (TException e) {
                         takeResult(TResult.of(TImage.of(outPutUri, fromType)), e.getDetailMessage());
                         e.printStackTrace();
@@ -187,7 +189,8 @@ public class TakePhotoImpl implements TakePhoto {
                         ImageRotateUtil.of().correctImage(contextWrap.getActivity(), outPutUri);
                     }
                     try {
-                        takeResult(TResult.of(TImage.of(TUriParse.getFilePathWithUri(outPutUri, contextWrap.getActivity()), fromType)));
+                        takeResult(TResult.of(TImage.of(TUriParse.getFilePathWithUri(outPutUri,
+                                contextWrap.getActivity()), fromType)));
                     } catch (TException e) {
                         takeResult(TResult.of(TImage.of(outPutUri, fromType)), e.getDetailMessage());
                         e.printStackTrace();
@@ -405,13 +408,14 @@ public class TakePhotoImpl implements TakePhoto {
         this.cropOptions = options;
         this.outPutUri = outPutUri;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            String status = Environment.getExternalStorageState();
+            this.tempUri = TUriParse.convertFileUriToFileProviderUri(contextWrap.getActivity(), outPutUri);
+//            String status = Environment.getExternalStorageState();
             // 判断是否有SD卡,优先使用SD卡存储,当没有SD卡时使用手机存储
-            if (status.equals(Environment.MEDIA_MOUNTED)) {
-                this.tempUri = contextWrap.getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new ContentValues());
-            } else {
-                this.tempUri = contextWrap.getActivity().getContentResolver().insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI, new ContentValues());
-            }
+//            if (status.equals(Environment.MEDIA_MOUNTED)) {
+//                this.tempUri = contextWrap.getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new ContentValues());
+//            } else {
+//                this.tempUri = contextWrap.getActivity().getContentResolver().insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI, new ContentValues());
+//            }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             this.tempUri = TUriParse.getTempUri(contextWrap.getActivity());
         } else {

@@ -11,19 +11,20 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.core.content.FileProvider;
-
 import com.darsh.multipleimageselect.models.Image;
+import com.soundcloud.android.crop.Crop;
+
+import org.devio.takephoto.R;
 import org.devio.takephoto.model.CropOptions;
+import org.devio.takephoto.model.TContextWrap;
 import org.devio.takephoto.model.TException;
 import org.devio.takephoto.model.TExceptionType;
 import org.devio.takephoto.model.TImage;
 import org.devio.takephoto.model.TIntentWap;
-import org.devio.takephoto.R;
-import org.devio.takephoto.model.TContextWrap;
-import com.soundcloud.android.crop.Crop;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,9 +44,9 @@ public class TUtils {
      * @return
      */
     public static ArrayList<Uri> convertImageToUri(Context context, ArrayList<Image> images) throws TException {
-        ArrayList<Uri> uris = new ArrayList();
+        ArrayList<Uri> uris = new ArrayList(images.size());
         for (Image image : images) {
-            uris.add(FileProvider.getUriForFile(context, TConstant.getFileProviderName(context), new File(image.path)));
+            uris.add(TUriParse.getUriForFile(context, new File(image.path)));
         }
         return uris;
     }
@@ -100,7 +101,7 @@ public class TUtils {
      * @throws TException
      */
     public static void sendIntentBySafely(TContextWrap contextWrap, List<TIntentWap> intentWapList, int defaultIndex, boolean isCrop)
-        throws TException {
+            throws TException {
         if (defaultIndex + 1 > intentWapList.size()) {
             throw new TException(isCrop ? TExceptionType.TYPE_NO_MATCH_PICK_INTENT : TExceptionType.TYPE_NO_MATCH_CROP_INTENT);
         }
@@ -120,7 +121,7 @@ public class TUtils {
         List result = contextWrap.getActivity().getPackageManager().queryIntentActivities(intentWap.getIntent(), PackageManager.MATCH_ALL);
         if (result.isEmpty()) {
             Toast.makeText(contextWrap.getActivity(), contextWrap.getActivity().getResources().getText(R.string.tip_no_camera),
-                Toast.LENGTH_SHORT).show();
+                    Toast.LENGTH_SHORT).show();
             throw new TException(TExceptionType.TYPE_NO_CAMERA);
         } else {
             startActivityForResult(contextWrap, intentWap);
@@ -136,19 +137,36 @@ public class TUtils {
      * @param options
      */
     public static void cropWithOtherAppBySafely(TContextWrap contextWrap, Uri imageUri, Uri outPutUri, CropOptions options) {
-        Intent nativeCropIntent = IntentUtils.getCropIntentWithOtherApp(imageUri, outPutUri, options);
+        Intent nativeCropIntent = IntentUtils.getCropIntentWithOtherApp(contextWrap, imageUri, outPutUri, options);
         List result = contextWrap.getActivity().getPackageManager().queryIntentActivities(nativeCropIntent, PackageManager.MATCH_ALL);
         if (result.isEmpty()) {
             cropWithOwnApp(contextWrap, imageUri, outPutUri, options);
         } else {
-            //            try {
-            //                imageUri=Uri.fromFile(new File(TUriParse.getFilePathWithDocumentsUri(imageUri,contextWrap.getActivity())));
-            //            } catch (TException e) {
-            //                e.printStackTrace();
-            //            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                imageUri = copyImgFormOtherApp(imageUri, contextWrap.getActivity());
+            }
             startActivityForResult(contextWrap,
-                new TIntentWap(IntentUtils.getCropIntentWithOtherApp(imageUri, outPutUri, options), TConstant.RC_CROP));
+                    new TIntentWap(IntentUtils.getCropIntentWithOtherApp(contextWrap, imageUri, outPutUri, options), TConstant.RC_CROP));
         }
+    }
+
+    /**
+     * 在Android 11 开始严格限制了区域存储，为了避免收到的uri不能被第三方裁剪app访问，需要先将其复制到本app目录下
+     *
+     * @param imageUri 原始图片的uri
+     * @return 新的本地File
+     */
+    public static Uri copyImgFormOtherApp(Uri imageUri, Activity activity) {
+        File file = TUriParse.getFileWithUri(imageUri, activity);
+        // TODO 需要先将其复制到本app目录下
+        File tempFile = null;
+        try {
+            tempFile = TImageFiles.getTempFile(activity, imageUri);
+            TImageFiles.inputStreamToFile(new FileInputStream(file), tempFile);
+        } catch (TException | FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return TUriParse.getUriForFile(activity, tempFile);
     }
 
     /**
@@ -163,16 +181,16 @@ public class TUtils {
         if (options.getAspectX() * options.getAspectY() > 0) {
             if (contextWrap.getFragment() != null) {
                 Crop.of(imageUri, outPutUri)
-                    .withAspect(options.getAspectX(), options.getAspectY())
-                    .start(contextWrap.getActivity(), contextWrap.getFragment());
+                        .withAspect(options.getAspectX(), options.getAspectY())
+                        .start(contextWrap.getActivity(), contextWrap.getFragment());
             } else {
                 Crop.of(imageUri, outPutUri).withAspect(options.getAspectX(), options.getAspectY()).start(contextWrap.getActivity());
             }
         } else if (options.getOutputX() * options.getOutputY() > 0) {
             if (contextWrap.getFragment() != null) {
                 Crop.of(imageUri, outPutUri)
-                    .withMaxSize(options.getOutputX(), options.getOutputY())
-                    .start(contextWrap.getActivity(), contextWrap.getFragment());
+                        .withMaxSize(options.getOutputX(), options.getOutputY())
+                        .start(contextWrap.getActivity(), contextWrap.getFragment());
             } else {
                 Crop.of(imageUri, outPutUri).withMaxSize(options.getOutputX(), options.getOutputY()).start(contextWrap.getActivity());
             }

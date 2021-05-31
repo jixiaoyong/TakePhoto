@@ -6,10 +6,15 @@ import android.content.Context;
  * 常量类
  *
  * @author JPH
- *         Date 2016/6/7 0007 9:39
+ * Date 2016/6/7 0007 9:39
  */
 public class TConstant {
 
+    /**
+     * Android 10之后分区存储可能的开头
+     */
+    public final static String[] FILE_PATHS_PREFIX = {"camera_photos", "external", "external_files",
+            "cache", "external_cache", "files"};
 
     /**
      * request Code 裁剪照片

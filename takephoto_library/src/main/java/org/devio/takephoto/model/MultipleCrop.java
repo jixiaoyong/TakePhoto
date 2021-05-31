@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.net.Uri;
 
 import org.devio.takephoto.uitl.TImageFiles;
+import org.devio.takephoto.uitl.TUriParse;
 import org.devio.takephoto.uitl.TUtils;
 
 import java.util.ArrayList;
@@ -33,7 +34,8 @@ public class MultipleCrop {
         this.uris = uris;
         ArrayList<Uri> outUris = new ArrayList<>();
         for (Uri uri : uris) {
-            outUris.add(Uri.fromFile(TImageFiles.getTempFile(activity, uri)));//生成临时裁切输出路径
+            // 生成临时裁切输出路径
+            outUris.add(TUriParse.getUriForFile(activity, TImageFiles.getTempFile(activity, uri)));
         }
         this.outUris = outUris;
         this.tImages = TUtils.getTImagesWithUris(outUris, fromType);

@@ -4,9 +4,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
+import android.os.ParcelFileDescriptor;
 
 import org.devio.takephoto.uitl.TFileUtils;
+import org.devio.takephoto.uitl.TUriParse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -17,8 +21,8 @@ import java.io.FileOutputStream;
  * 压缩照片
  *
  * @author JPH
- *         Date 2015-08-26 下午1:44:26
- *         Version:1.0.3
+ * Date 2015-08-26 下午1:44:26
+ * Version:1.0.3
  */
 public class CompressImageUtil {
     private CompressConfig config;
@@ -106,14 +110,16 @@ public class CompressImageUtil {
             return;
         }
         BitmapFactory.Options newOpts = new BitmapFactory.Options();
-        newOpts.inJustDecodeBounds = true;//只读边,不读内容
-        BitmapFactory.decodeFile(imgPath, newOpts);
+        // 只读边,不读内容
+        newOpts.inJustDecodeBounds = true;
+        decodeFileSafely(imgPath, newOpts);
         newOpts.inJustDecodeBounds = false;
         int width = newOpts.outWidth;
         int height = newOpts.outHeight;
         float maxSize = config.getMaxPixel();
         int be = 1;
-        if (width >= height && width > maxSize) {//缩放比,用高或者宽其中较大的一个数据进行计算
+        if (width >= height && width > maxSize) {
+            // 缩放比,用高或者宽其中较大的一个数据进行计算
             be = (int) (newOpts.outWidth / maxSize);
             be++;
         } else if (width < height && height > maxSize) {
@@ -124,7 +130,7 @@ public class CompressImageUtil {
         newOpts.inPreferredConfig = Config.ARGB_8888;//该模式是默认的,可不设
         newOpts.inPurgeable = true;// 同时设置才会有效
         newOpts.inInputShareable = true;//。当系统内存不够时候图片自动被回收
-        Bitmap bitmap = BitmapFactory.decodeFile(imgPath, newOpts);
+        Bitmap bitmap = decodeFileSafely(imgPath, newOpts);
         if (config.isEnableQualityCompress()) {
             compressImageByQuality(bitmap, imgPath, listener);//压缩好比例大小后再进行质量压缩
         } else {
@@ -133,6 +139,20 @@ public class CompressImageUtil {
 
             listener.onCompressSuccess(thumbnailFile.getPath());
         }
+    }
+
+    private Bitmap decodeFileSafely(String imgPath, BitmapFactory.Options newOpts) throws FileNotFoundException {
+        Bitmap bitmap = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Uri imageUri = TUriParse.getUriForFile(context, new File(imgPath));
+            ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(imageUri, "rw");
+            if (pfd != null) {
+                bitmap = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
+            }
+        } else {
+            bitmap = BitmapFactory.decodeFile(imgPath, newOpts);
+        }
+        return bitmap;
     }
 
     /**

@@ -5,6 +5,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.TextUtils;
@@ -90,12 +91,17 @@ public class TUriParse {
 
     /**
      * 创建一个用于拍照图片输出路径的Uri (FileProvider)
+     * 适配Android 7 FileProvider
      *
      * @param context
      * @return
      */
     public static Uri getUriForFile(Context context, File file) {
-        return FileProvider.getUriForFile(context, TConstant.getFileProviderName(context), file);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return FileProvider.getUriForFile(context, TConstant.getFileProviderName(context), file);
+        } else {
+            return Uri.fromFile(file);
+        }
     }
 
     /**
@@ -108,11 +114,15 @@ public class TUriParse {
         if (uri == null) {
             return null;
         }
-        String path;
+        String path = uri.getPath();
         if (TextUtils.equals(uri.getAuthority(), TConstant.getFileProviderName(context))) {
-            path = new File(uri.getPath().replace("camera_photos/", "")).getAbsolutePath();
-        } else {
-            path = uri.getPath();
+            if (path.startsWith("/external_files")) {
+                path = new File(context.getExternalFilesDir(null),
+                        path.replace("/external_files", "")).getAbsolutePath();
+            } else {
+                path = new File(uri.getPath().replace("camera_photos/", ""))
+                        .getAbsolutePath();
+            }
         }
         return path;
     }
