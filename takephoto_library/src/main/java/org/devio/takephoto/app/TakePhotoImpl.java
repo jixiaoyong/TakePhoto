@@ -2,14 +2,11 @@ package org.devio.takephoto.app;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
@@ -129,7 +126,7 @@ public class TakePhotoImpl implements TakePhoto {
                 break;
             case TConstant.RC_PICK_PICTURE_FROM_GALLERY_ORIGINAL://从相册选择照片不裁剪
                 if (resultCode == Activity.RESULT_OK) {
-                    Uri copyImgFormOtherApp = TUtils.copyImgFormOtherApp(data.getData(),contextWrap.getActivity());
+                    Uri copyImgFormOtherApp = TUtils.copyImgFormOtherApp(data.getData(), contextWrap.getActivity());
                     try {
                         takeResult(
                                 TResult.of(TImage.of(TUriParse.getFilePathWithUri(copyImgFormOtherApp, contextWrap.getActivity()), fromType)));
@@ -409,13 +406,6 @@ public class TakePhotoImpl implements TakePhoto {
         this.outPutUri = outPutUri;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             this.tempUri = TUriParse.convertFileUriToFileProviderUri(contextWrap.getActivity(), outPutUri);
-//            String status = Environment.getExternalStorageState();
-            // 判断是否有SD卡,优先使用SD卡存储,当没有SD卡时使用手机存储
-//            if (status.equals(Environment.MEDIA_MOUNTED)) {
-//                this.tempUri = contextWrap.getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new ContentValues());
-//            } else {
-//                this.tempUri = contextWrap.getActivity().getContentResolver().insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI, new ContentValues());
-//            }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             this.tempUri = TUriParse.getTempUri(contextWrap.getActivity());
         } else {

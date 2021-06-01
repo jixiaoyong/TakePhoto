@@ -23,8 +23,8 @@ import org.devio.takephoto.model.TImage;
 import org.devio.takephoto.model.TIntentWap;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,15 +154,15 @@ public class TUtils {
      * 在Android 11 开始严格限制了区域存储，为了避免收到的uri不能被第三方裁剪app访问，需要先将其复制到本app目录下
      *
      * @param imageUri 原始图片的uri
-     * @return 新的本地File
+     * @return 新的本地File的uri
      */
     public static Uri copyImgFormOtherApp(Uri imageUri, Activity activity) {
-        File file = TUriParse.getFileWithUri(imageUri, activity);
-        // TODO 需要先将其复制到本app目录下
+        // 需要先将其复制到本app目录下
         File tempFile = null;
         try {
             tempFile = TImageFiles.getTempFile(activity, imageUri);
-            TImageFiles.inputStreamToFile(new FileInputStream(file), tempFile);
+            InputStream inputStream = activity.getContentResolver().openInputStream(imageUri);
+            TImageFiles.inputStreamToFile(inputStream, tempFile);
         } catch (TException | FileNotFoundException e) {
             e.printStackTrace();
         }
